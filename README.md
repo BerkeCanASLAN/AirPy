@@ -158,4 +158,4 @@ and NumPy. Thanks also to the AirDrop reverse‑engineering work at [OpenDrop](h
 and [winawdl](https://github.com/raph559/winawdl), which explain why real AirDrop is out of reach here.
 
 Licensed under the [MIT License](LICENSE). AirPy is an independent project and is **not affiliated with, endorsed
-by or sponsored by Apple Inc.** AirPlay, AirDrop, HomePod, Apple TV and iPhone are trademarks of Apple Inc.
+by or sponsored by Apple Inc.** AirPlay, AirDrop, HomePod, Apple TV and iPhone are trademarks of Apple Inc..
