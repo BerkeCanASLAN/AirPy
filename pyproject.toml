@@ -1,0 +1,23 @@
+# AirPy is not published as a Python package; install it with install.bat / requirements.txt.
+# This file only holds tool settings (ruff, pytest).
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "I"]
+ignore = [
+    "E501",   # line length: no formatter is used and UI strings can be long
+    "B008",
+    "UP037",  # quotes in type hints
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B", "E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AirPy Sync</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>AirPy Sync</h1>
+    <label class="switch" title="Turn the extension on/off">
+      <input type="checkbox" id="enabled" aria-label="Extension enabled">
+      <span class="track"></span>
+    </label>
+  </header>
+
+  <section class="card" aria-live="polite">
+    <p class="line"><span class="dot" id="dot"></span><span id="airpyText">Looking for AirPy…</span></p>
+    <p class="line muted" id="tabText">Checking this page…</p>
+  </section>
+
+  <section class="card">
+    <div class="seg" role="tablist" aria-label="Delay source">
+      <button type="button" role="tab" id="modeAuto" data-mode="auto">Automatic</button>
+      <button type="button" role="tab" id="modeManual" data-mode="manual">Manual</button>
+    </div>
+
+    <div id="autoBox">
+      <div class="row">
+        <label for="offset">Fine-tune</label>
+        <output id="offsetOut">+0 ms</output>
+      </div>
+      <div class="slide">
+        <button type="button" class="step" id="offsetDown" aria-label="Decrease by 5 ms">−</button>
+        <input type="range" id="offset" min="-300" max="600" step="5" value="0">
+        <button type="button" class="step" id="offsetUp" aria-label="Increase by 5 ms">+</button>
+      </div>
+      <p class="hint" id="autoHint">The picture is held back by the latency AirPy reports. If the light comes before the sound, increase it.</p>
+    </div>
+
+    <div id="manualBox" hidden>
+      <div class="row">
+        <label for="manual">Delay</label>
+        <output id="manualOut">250 ms</output>
+      </div>
+      <div class="slide">
+        <button type="button" class="step" id="manualDown" aria-label="Decrease by 5 ms">−</button>
+        <input type="range" id="manual" min="0" max="1500" step="5" value="250">
+        <button type="button" class="step" id="manualUp" aria-label="Increase by 5 ms">+</button>
+      </div>
+      <p class="hint">Works without AirPy too; a fixed delay is applied (e.g. a Bluetooth speaker).</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <label for="siteOff" id="siteLabel">Turn off on this site</label>
+      <label class="switch">
+        <input type="checkbox" id="siteOff" aria-labelledby="siteLabel">
+        <span class="track"></span>
+      </label>
+    </div>
+  </section>
+
+  <footer>
+    <button type="button" id="calibrate" class="primary">Sync test</button>
+    <p class="hint" id="footHint"></p>
+  </footer>
+</main>
+<script src="popup.js"></script>
+</body>
+</html>

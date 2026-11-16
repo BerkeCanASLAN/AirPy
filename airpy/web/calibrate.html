@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AirPy Sync Test</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #ffffff; --line: #e3e5ea; --text: #14161a; --muted: #5d6572;
+    --accent: #2f6df6; --accent-text: #ffffff; --ok: #1a9c5b; --err: #d43b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --card: #181b21; --line: #272b33; --text: #eef0f3; --muted: #9aa1ad;
+      --accent: #5b8cff; --accent-text: #0b0d11; --ok: #3ecf8e; --err: #ff6b6b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; padding: 28px 16px 48px;
+  }
+  main { max-width: 680px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-size: 24px; margin: 0; letter-spacing: -0.01em; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  ol { margin: 0; padding-left: 22px; color: var(--muted); }
+  ol li { padding: 3px 0; }
+  ol b, p b { color: var(--text); font-weight: 600; }
+  button {
+    appearance: none; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-text);
+    font: inherit; font-weight: 600; padding: 11px 18px; min-height: 44px; cursor: pointer;
+  }
+  button:disabled { opacity: .55; cursor: default; }
+  button:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  video { width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; display: block; }
+  .muted { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+  .rule { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .rule div { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  #status { min-height: 1.5em; margin: 12px 0 0; font-size: 14px; }
+  #status.err { color: var(--err); }
+  #status.ok { color: var(--ok); }
+  @media (max-width: 480px) { .rule { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sync test</h1>
+
+  <section>
+    <ol>
+      <li>Switch a speaker <b>on</b> in AirPy (so streaming starts) and set the volume to a level you can hear.</li>
+      <li>Press <b>Prepare test video</b>. Preparing takes 4 seconds and makes no sound.</li>
+      <li>Play the video. Every second the screen <b>flashes white once</b> and a <b>beep</b> should be heard at the same moment.</li>
+      <li>Click the extension icon and change <b>Fine-tune</b>; stop when the light and the beep coincide.</li>
+    </ol>
+    <div class="rule">
+      <div>If the <b>light comes before the sound</b> → <b>increase (+)</b> the fine-tune</div>
+      <div>If the <b>beep comes before the light</b> → <b>decrease (−)</b> the fine-tune</div>
+    </div>
+  </section>
+
+  <section>
+    <button id="prep" type="button">Prepare test video</button>
+    <p id="status" role="status"></p>
+    <div id="stage" hidden>
+      <video id="clip" controls playsinline aria-label="Sync test video"></video>
+      <p class="muted">In this video the sound is a short beep and the picture is a white flash. The video loops.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var SECONDS = 4, W = 640, H = 360, FPS = 30;
+
+  function say(text, kind) {
+    var s = $("status");
+    s.textContent = text;
+    s.className = kind || "";
+  }
+
+  function pickMime() {
+    var list = ["video/webm;codecs=vp8,opus", "video/webm;codecs=vp9,opus", "video/webm"];
+    for (var i = 0; i < list.length; i++) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(list[i])) return list[i];
+    }
+    return "";
+  }
+
+  async function prepare() {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx || !window.MediaRecorder) throw new Error("This browser does not support recording.");
+    var mime = pickMime();
+    if (!mime) throw new Error("WebM recording is not supported.");
+
+    var canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    var g = canvas.getContext("2d");
+
+    // The audio is connected to the recording target only (not the speakers): preparation is silent.
+    var ac = new Ctx();
+    await ac.resume();
+    var dest = ac.createMediaStreamDestination();
+    var t0 = ac.currentTime + 0.3;
+    for (var k = 0; k < SECONDS; k++) {
+      var osc = ac.createOscillator(), gain = ac.createGain();
+      osc.frequency.value = 1000;
+      gain.gain.value = 0;
+      osc.connect(gain); gain.connect(dest);
+      var at = t0 + k;
+      gain.gain.setValueAtTime(0.6, at);
+      gain.gain.setValueAtTime(0, at + 0.06);
+      osc.start(at); osc.stop(at + 0.12);
+    }
+
+    var running = true;
+    (function draw() {
+      if (!running) return;
+      var e = ac.currentTime - t0;
+      var on = e >= 0 && e < SECONDS && (e % 1) < 0.12;
+      g.fillStyle = on ? "#ffffff" : "#101216";
+      g.fillRect(0, 0, W, H);
+      g.fillStyle = on ? "#101216" : "#9aa1ad";
+      g.font = "600 44px 'Segoe UI', sans-serif";
+      g.textAlign = "center";
+      g.fillText(on ? "●" : "wait", W / 2, H / 2 + 15);
+      requestAnimationFrame(draw);
+    })();
+
+    var stream = new MediaStream(
+      canvas.captureStream(FPS).getVideoTracks().concat(dest.stream.getAudioTracks())
+    );
+    var chunks = [];
+    var rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 3000000 });
+    rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    var stopped = new Promise(function (resolve) { rec.onstop = resolve; });
+    rec.start(200);
+    await new Promise(function (r) { setTimeout(r, (t0 - ac.currentTime + SECONDS + 0.4) * 1000); });
+    rec.stop();
+    await stopped;
+    running = false;
+    stream.getTracks().forEach(function (t) { t.stop(); });
+    ac.close();
+    return new Blob(chunks, { type: "video/webm" });
+  }
+
+  $("prep").addEventListener("click", async function () {
+    var btn = this;
+    btn.disabled = true;
+    say("Preparing… (silent, 4 seconds)");
+    try {
+      var blob = await prepare();
+      var clip = $("clip");
+      clip.src = URL.createObjectURL(blob);
+      clip.addEventListener("loadedmetadata", function fix() {
+        // MediaRecorder files carry no duration; seek to the end and back to teach it
+        if (clip.duration === Infinity) {
+          clip.removeEventListener("loadedmetadata", fix);
+          clip.currentTime = 1e101;
+          clip.addEventListener("timeupdate", function back() {
+            clip.removeEventListener("timeupdate", back);
+            clip.currentTime = 0;
+          });
+        }
+      });
+      clip.addEventListener("ended", function () { clip.currentTime = 0; clip.play(); });
+      $("stage").hidden = false;
+      say("Ready. Play the video and compare the light with the beep.", "ok");
+      btn.textContent = "Prepare again";
+    } catch (err) {
+      say("Could not prepare: " + (err && err.message ? err.message : err), "err");
+    }
+    btn.disabled = false;
+  });
+})();
+</script>
+</body>
+</html>
