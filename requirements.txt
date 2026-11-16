@@ -3,7 +3,7 @@ pyatv>=0.18,<0.19
 # pyatv 0.18, srptools 2.x ile calismiyor (SRPClientSession imzasi degisti)
 srptools<2
 # Arayuz
-PySide6>=6.8
+PySide6>=6.12.0
 # Windows sistem sesi (WASAPI loopback), ornekleme hizi donusumu, ses aygiti denetimi
 PyAudioWPatch>=0.2.12
 soxr>=1.0
