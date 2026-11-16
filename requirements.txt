@@ -7,7 +7,7 @@ PySide6>=6.8
 # Windows sistem sesi (WASAPI loopback), ornekleme hizi donusumu, ses aygiti denetimi
 PyAudioWPatch>=0.2.12
 soxr>=1.0
-pycaw>=20240210
+pycaw>=20260927
 numpy>=2.0
 # Telefon baglantisi icin QR kod
 qrcode>=8.0
